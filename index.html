@@ -24,7 +24,7 @@
       <a href="TMO Design System.dc.html" style="font-size:13px">← Design system</a>
       <div style="font-size:26px;font-weight:800;line-height:1.15">TMO Driver</div>
       <div style="font-size:15px;color:#5C6B60;line-height:1.5">Accept pickups, weigh at the door, scan the waybill QR to take custody and scan the receiver’s QR to approve delivery.</div>
-      <div style="background:#fff;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.5"><b>Test logins</b><span style="color:#5C6B60">Emeka · 0803 555 0192 · PIN 2580<br>Musa · 0806 123 0044 · PIN 1111<br>Or apply as a new driver — approve in Admin, or self-approve for testing.</span></div>
+      <div style="background:#fff;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.5"><b>Test logins</b><span style="color:#5C6B60">One login for everything: <b style="color:#17251B">0801 234 5678</b> · PIN <b style="color:#17251B">1234</b> · code <b style="color:#17251B">123456</b> · waybill <b style="color:#17251B">TMO-0001</b></span></div>
       <a href="TMO Test Console.dc.html" style="background:#075A36;color:#fff;padding:14px 16px;border-radius:14px;font-weight:700;display:flex;justify-content:space-between">Open Test Console <span>→</span></a>
     </aside>
   </sc-if>
@@ -67,7 +67,7 @@
       <div style="flex:1;display:flex;flex-direction:column;min-height:0;background:#fff">
         <div style="padding:6px 16px 0;display:flex;align-items:center;gap:12px"><button onClick="{{ go.apply }}" style="width:44px;height:44px;border-radius:50%;border:0;background:#F4F6F3;font-size:20px;cursor:pointer">←</button><span style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#5C6B60">STEP 2 OF 3</span></div>
         <div style="padding:16px 24px;display:flex;flex-direction:column;gap:18px">
-          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:28px;font-weight:800">Enter the code</span><span style="font-size:15px;color:#5C6B60">Sent to {{ phoneShown }} · any 6 digits work in testing</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:28px;font-weight:800">Enter the code</span><span style="font-size:15px;color:#5C6B60">Your code is <b style="color:#17251B">123456</b> · sent to {{ phoneShown }}</span></div>
           <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px"><sc-for list="{{ otpBoxes }}" as="b" hint-placeholder-count="6"><span style="height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;border:2px solid {{ b.bd }};background:{{ b.bg }}">{{ b.d }}</span></sc-for></div>
           <button onClick="{{ autofill }}" style="align-self:flex-start;border:0;background:none;color:#075A36;font-weight:800;font-size:14px;cursor:pointer;padding:0">Paste from SMS</button>
         </div>
@@ -229,7 +229,7 @@
 const SCR=['welcome','apply','otp','docs','review','signin','precheck','list','job','endshift'];
 class Component extends DCLogic {
   vref=React.createRef();
-  state={ready:false,screen:'welcome',name:'',phone:'',veh:0,plate:'',otp:'',sent:'',docs:[false,false,false,false],pinMode:'signin',pin:'',newPin:'',err:'',scale:false,vc:[false,false,false,false],cur:null,kg:'',photo:'',manual:'',scanMsg:'',scanOk:false,scanning:false,podOk:false,pod:'',issue:false,toast:null};
+  state={ready:false,screen:'welcome',name:'',phone:'08012345678',veh:0,plate:'',otp:'',sent:'',docs:[false,false,false,false],pinMode:'signin',pin:'',newPin:'',err:'',scale:false,vc:[false,false,false,false],cur:null,kg:'',photo:'',manual:'',scanMsg:'',scanOk:false,scanning:false,podOk:false,pod:'',issue:false,toast:null};
   componentDidMount(){const boot=()=>{const T=window.TMO;if(!T)return setTimeout(boot,40);this.lastSms=Date.now();const u=this.me();
       this.setState({ready:true,screen:!u?'welcome':u.status!=='active'||!u.pin?'review':u.onDuty?'list':'precheck',phone:u?u.phone:''});
       this.unsub=T.subscribe(db=>{const me=this.me();const ph=T.norm(me?me.phone:this.state.phone);const m=db.sms.find(x=>x.to===ph&&x.at>this.lastSms);if(m){this.lastSms=m.at;this.setState({toast:m});clearTimeout(this._t);this._t=setTimeout(()=>this.setState({toast:null}),6500);}else this.forceUpdate();});};
@@ -251,14 +251,14 @@ class Component extends DCLogic {
     const go=Object.fromEntries(SCR.map(k=>[k,()=>this.go(k,k==='signin'?{pinMode:'signin',pin:''}:{})]));
     const VEH=[['Van','400 kg'],['Car','120 kg'],['Motorbike','25 kg']];
     const otpDone=()=>{let id;T.update(d=>{let u=T.userByPhone(d,s.phone,'driver');if(!u){u={id:T.uid('u'),role:'driver',name:s.name.trim(),phone:T.norm(s.phone),vehicle:VEH[s.veh][0],plate:s.plate.trim().toUpperCase(),status:'draft',onDuty:false,createdAt:Date.now()};d.users.push(u);}id=u.id;});T.setSession('driver',id);this.go('docs');};
-    const otpPress=k=>()=>{if(k==='⌫')return this.setState({otp:s.otp.slice(0,-1)});if(!k)return;const o=(s.otp+k).slice(0,6);this.setState({otp:o});if(o.length===6)setTimeout(otpDone,300);};
+    const otpPress=k=>()=>{if(k==='⌫')return this.setState({otp:s.otp.slice(0,-1)});if(!k)return;const o=(s.otp+k).slice(0,6);this.setState({otp:o});if(o.length===6){if(o!==T.CODE)return setTimeout(()=>this.setState({otp:''}),300);setTimeout(otpDone,300);}};
     const finishPin=p=>{
-      if(s.pinMode==='signin'){const u=T.userByPhone(db,s.phone,'driver');if(!u)return this.setState({pin:'',err:'No driver with this number. Apply first.'});if(u.pin&&u.pin!==p)return this.setState({pin:'',err:'Incorrect PIN — tap “Forgot PIN?” to reset.'});T.setSession('driver',u.id);T.update(d=>T.log(d,u.name,'driver','signed in to TMO Driver'));
+      if(s.pinMode==='signin'){const u=T.userByPhone(db,s.phone,'driver');if(!u)return this.setState({pin:'',err:'No driver with this number. Apply first.'});if(p!==T.PIN)return this.setState({pin:'',err:'Incorrect PIN — tap “Forgot PIN?” to reset.'});T.setSession('driver',u.id);T.update(d=>T.log(d,u.name,'driver','signed in to TMO Driver'));
         this.go(u.status!=='active'?'review':!u.pin?'review':u.onDuty?'list':'precheck',{pin:''});}
-      else if(s.pinMode==='create')this.setState({newPin:p,pin:'',pinMode:'confirm',err:''});
+      else if(s.pinMode==='create'){if(p!==T.PIN)return this.setState({pin:'',err:'Every PIN is 1234'});this.setState({newPin:p,pin:'',pinMode:'confirm',err:''});}
       else{if(p!==s.newPin)return this.setState({pin:'',pinMode:'create',err:'PINs didn’t match'});const id=me?me.id:(T.userByPhone(db,s.phone,'driver')||{}).id;T.update(d=>{const u=T.user(d,id);u.pin=p;T.log(d,u.name,'driver','set a new PIN');});T.setSession('driver',id);this.go('precheck',{pin:'',pinMode:'signin'});}};
     const pinPress=k=>()=>{if(k==='⌫')return this.setState({pin:s.pin.slice(0,-1),err:''});if(!k)return;if(s.pinMode==='signin'&&T.norm(s.phone).length!==11)return this.setState({err:'Enter your phone number first'});const p=(s.pin+k).slice(0,4);this.setState({pin:p,err:''});if(p.length===4)setTimeout(()=>finishPin(p),200);};
-    const PU={signin:{title:'Welcome back',sub:'Phone number and 4-digit PIN',askPhone:true},create:{title:'Create a PIN',sub:'Any 4 digits you’ll use every shift',askPhone:false},confirm:{title:'Confirm PIN',sub:'Enter it once more',askPhone:false}}[s.pinMode];
+    const PU={signin:{title:'Welcome back',sub:'0801 234 5678 · PIN 1234',askPhone:true},create:{title:'Set your PIN',sub:'Enter 1234 — one PIN for everyone',askPhone:false},confirm:{title:'Confirm PIN',sub:'Enter it once more',askPhone:false}}[s.pinMode];
     const allV=s.vc.every(Boolean)&&s.scale;
     // jobs
     const offers=me&&me.onDuty?db.shipments.filter(x=>x.channel==='online'&&!x.driverId&&['Created','Paid'].includes(x.status)):[];
