@@ -137,6 +137,7 @@
               <div style="display:flex;justify-content:space-between"><span style="font-size:12px;font-weight:800;letter-spacing:.1em">{{ o.k }}</span><span style="font-family:'IBM Plex Mono';font-size:12px;font-weight:600">{{ o.code }}</span></div>
               <span style="font-size:19px;font-weight:800;line-height:1.2">{{ o.route }}</span>
               <span style="font-size:14px;font-weight:600">{{ o.meta }}</span>
+              <span style="font-size:13px;font-weight:700;background:rgba(23,37,27,.08);border-radius:10px;padding:8px 10px;line-height:1.4">{{ o.who }}</span>
               <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px"><button onClick="{{ o.decline }}" style="height:46px;border:1.5px solid #17251B;border-radius:12px;background:transparent;color:#17251B;font-weight:800;font-size:15px;cursor:pointer">Decline</button><button onClick="{{ o.accept }}" style="height:46px;border:0;border-radius:12px;background:#17251B;color:#fff;font-weight:800;font-size:15px;cursor:pointer">Accept</button></div>
             </div>
           </sc-for>
@@ -261,7 +262,7 @@ class Component extends DCLogic {
     const PU={signin:{title:'Welcome back',sub:'0801 234 5678 · PIN 1234',askPhone:true},create:{title:'Set your PIN',sub:'Enter 1234 — one PIN for everyone',askPhone:false},confirm:{title:'Confirm PIN',sub:'Enter it once more',askPhone:false}}[s.pinMode];
     const allV=s.vc.every(Boolean)&&s.scale;
     // jobs
-    const offers=me?db.shipments.filter(x=>x.driverId===me.id&&!x.acceptedAt&&!['Cancelled','Closed','Delivered'].includes(x.status)):[];
+    const offers=me?db.shipments.filter(x=>x.driverId&&!x.acceptedAt&&!['Cancelled','Closed','Delivered'].includes(x.status)):[];
     const myJobs=me?db.shipments.filter(x=>x.driverId===me.id&&x.acceptedAt&&!['Cancelled'].includes(x.status)):[];
     const openJobs=myJobs.filter(x=>!['Delivered','Closed'].includes(x.status));
     const doneJobs=myJobs.filter(x=>['Delivered','Closed'].includes(x.status));
@@ -309,9 +310,9 @@ class Component extends DCLogic {
       scale:s.scale?{t:'Connected · calibrated',c:'#075A36',l:'Paired',bg:'#075A36',fg:'#fff'}:{t:'Not connected',c:'#8A968D',l:'Pair',bg:'#fff',fg:'#075A36'},pairScale:()=>this.setState({scale:true}),
       vchecks:['Tyres, lights and brakes OK','Cargo area clean and lockable','Seals and labels on board','Fuel above ¼ tank'].map((l,i)=>({l,bg:s.vc[i]?'#075A36':'#fff',tick:s.vc[i]?'✓':'',toggle:()=>{const a=s.vc.slice();a[i]=!a[i];this.setState({vc:a});}})),
       dutyCta:{bg:allV?'#075A36':'#E2E7E1',fg:allV?'#fff':'#8A968D'},goOnDuty:()=>{if(!allV)return;T.update(d=>{const u=T.user(d,me.id);u.onDuty=true;T.log(d,u.name,'driver','went on duty · '+u.plate);});this.go('list');},
-      offers:offers.map(x=>({k:x.channel==='online'?'NEW PICKUP · ASSIGNED BY OFFICER':'NEW PARK JOB · ASSIGNED BY OFFICER',code:x.code,route:(x.pickup||x.park)+' → '+T.dest(x.dest).s,meta:(x.kg?x.kg+' kg':'Est. '+T.BANDS[x.estBand||0].l)+' · '+x.category+(x.channel==='online'?' · '+x.senderName:''),
-        accept:()=>{T.update(d=>{const y=T.ship(d,x.code);if(y.driverId!==me.id)return;y.acceptedAt=Date.now();T.note(d,y,'Driver accepted',nm,'driver',(me.vehicle||'')+' '+(me.plate||''));if(y.channel==='online')T.sms(d,y.senderPhone,'TMO: '+nm+' ('+(me.vehicle||'')+' '+(me.plate||'')+') accepted your pickup '+y.code+' and is on the way.');});this.openJob(x.code);},
-        decline:()=>T.update(d=>{const y=T.ship(d,x.code);if(y.driverId!==me.id)return;y.driverId=null;y.status=y.prevStatus||(y.channel==='online'?'Created':'Accepted');T.note(d,y,'Driver declined',nm,'driver','Back to officer to reassign');})})),
+      offers:offers.map(x=>{const au=T.user(db,x.driverId)||me,mine=au.id===me.id;return {who:mine?'Assigned to you':'Assigned to '+au.name+' · '+(au.vehicle||'')+' — accepting signs you in as them (prototype)',k:x.channel==='online'?'NEW PICKUP · ASSIGNED BY OFFICER':'NEW PARK JOB · ASSIGNED BY OFFICER',code:x.code,route:(x.pickup||x.park)+' → '+T.dest(x.dest).s,meta:(x.kg?x.kg+' kg':'Est. '+T.BANDS[x.estBand||0].l)+' · '+x.category+(x.channel==='online'?' · '+x.senderName:''),
+        accept:()=>{if(!mine)T.setSession('driver',au.id);T.update(d=>{const y=T.ship(d,x.code);if(y.driverId!==au.id)return;const u=T.user(d,au.id);u.onDuty=true;y.acceptedAt=Date.now();T.note(d,y,'Driver accepted',au.name,'driver',(au.vehicle||'')+' '+(au.plate||''));if(y.channel==='online')T.sms(d,y.senderPhone,'TMO: '+au.name+' ('+(au.vehicle||'')+' '+(au.plate||'')+') accepted your pickup '+y.code+' and is on the way.');});this.openJob(x.code);},
+        decline:()=>T.update(d=>{const y=T.ship(d,x.code);if(y.driverId!==au.id)return;y.driverId=null;y.status=y.prevStatus||(y.channel==='online'?'Created':'Accepted');T.note(d,y,'Driver declined',au.name,'driver','Back to officer to reassign');})};}),
       jobs:openJobs.concat(doneJobs).map(jobRow),noJobs:myJobs.length===0,
       toList:()=>this.go('list'),j,v,scanUi,cta,cta2,vref:this.vref,
       kgIn:s.kg,onKg:e=>this.setState({kg:e.target.value.replace(/[^\d.]/g,'')}),readScale:()=>this.setState({kg:(Math.random()*12+0.8).toFixed(1)}),
