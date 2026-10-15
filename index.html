@@ -55,7 +55,7 @@
           <span style="font-size:28px;font-weight:800">Your details</span>
           <input value="{{ a.name }}" onInput="{{ on.name }}" placeholder="Full name" style="height:52px;border:1.5px solid #E2E7E1;border-radius:14px;padding:0 16px;font-size:16px;font-weight:600;outline:none">
           <input value="{{ a.phone }}" onInput="{{ on.phone }}" placeholder="Phone number" inputmode="tel" style="height:52px;border:1.5px solid #E2E7E1;border-radius:14px;padding:0 16px;font-size:16px;font-weight:600;outline:none">
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><sc-for list="{{ vehicles }}" as="v" hint-placeholder-count="3"><button onClick="{{ v.pick }}" style="height:60px;border-radius:14px;cursor:pointer;font-weight:800;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:2px solid {{ v.bd }};background:{{ v.bg }};color:#17251B">{{ v.l }}<span style="font-size:11px;font-weight:600;color:#5C6B60">{{ v.s }}</span></button></sc-for></div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px"><sc-for list="{{ vehicles }}" as="v" hint-placeholder-count="3"><button onClick="{{ v.pick }}" style="height:60px;border-radius:14px;cursor:pointer;font-weight:800;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:2px solid {{ v.bd }};background:{{ v.bg }};color:#17251B">{{ v.l }}<span style="font-size:11px;font-weight:600;color:#5C6B60">{{ v.s }}</span></button></sc-for></div>
           <input value="{{ a.plate }}" onInput="{{ on.plate }}" placeholder="Plate number, e.g. LND 774 PQ" style="height:52px;border:1.5px solid #E2E7E1;border-radius:14px;padding:0 16px;font-size:16px;font-weight:600;outline:none;font-family:'IBM Plex Mono'">
           <span style="font-size:13px;font-weight:700;color:#C8412F">{{ err }}</span>
         </div>
@@ -134,14 +134,14 @@
         <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
           <sc-for list="{{ offers }}" as="o" hint-placeholder-count="0">
             <div style="background:#F9D44B;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px">
-              <div style="display:flex;justify-content:space-between"><span style="font-size:12px;font-weight:800;letter-spacing:.1em">NEW PICKUP REQUEST</span><span style="font-family:'IBM Plex Mono';font-size:12px;font-weight:600">{{ o.code }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-size:12px;font-weight:800;letter-spacing:.1em">{{ o.k }}</span><span style="font-family:'IBM Plex Mono';font-size:12px;font-weight:600">{{ o.code }}</span></div>
               <span style="font-size:19px;font-weight:800;line-height:1.2">{{ o.route }}</span>
               <span style="font-size:14px;font-weight:600">{{ o.meta }}</span>
-              <button onClick="{{ o.accept }}" style="height:46px;border:0;border-radius:12px;background:#17251B;color:#fff;font-weight:800;font-size:15px;cursor:pointer">Accept job</button>
+              <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px"><button onClick="{{ o.decline }}" style="height:46px;border:1.5px solid #17251B;border-radius:12px;background:transparent;color:#17251B;font-weight:800;font-size:15px;cursor:pointer">Decline</button><button onClick="{{ o.accept }}" style="height:46px;border:0;border-radius:12px;background:#17251B;color:#fff;font-weight:800;font-size:15px;cursor:pointer">Accept</button></div>
             </div>
           </sc-for>
           <span style="font-size:16px;font-weight:800">My jobs</span>
-          <sc-if value="{{ noJobs }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:#5C6B60;line-height:1.5">No jobs yet. Online requests appear above; park officers can also assign packages to you.</span></sc-if>
+          <sc-if value="{{ noJobs }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:#5C6B60;line-height:1.5">No jobs yet. When an officer assigns you a job it appears above — accept it to start. Park officers can also assign packages to you.</span></sc-if>
           <sc-for list="{{ jobs }}" as="j" hint-placeholder-count="2">
             <button onClick="{{ j.open }}" style="border:0;text-align:left;cursor:pointer;background:#fff;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px;opacity:{{ j.op }}">
               <div style="display:flex;justify-content:space-between;align-items:center;width:100%"><span style="font-size:12px;font-weight:800;letter-spacing:.08em;padding:4px 8px;border-radius:6px;background:{{ j.kb }};color:#17251B">{{ j.kind }}</span><span style="padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700;background:{{ j.bg }};color:{{ j.fg }}">{{ j.status }}</span></div>
@@ -240,7 +240,7 @@ class Component extends DCLogic {
   go(screen,x){if(screen!=='job')this.stopCam();this.setState(Object.assign({screen,err:''},x||{}));}
   openJob(code){this.stopCam();this.setState({screen:'job',cur:code,kg:'',photo:'',manual:'',scanMsg:'',scanOk:false,scanning:false,podOk:false,pod:'',err:''});}
   checkScan(text){const T=TMO,sh=T.ship(T.db,this.state.cur);if(!sh)return;const t=String(text||'').trim();const nm=this.me().name;
-    if(sh.status==='Out for delivery'){if(t===T.podPayload(sh)||t===sh.podToken){this.stopCam();this.setState({podOk:true,scanning:false,scanMsg:''});T.update(d=>T.note(d,T.ship(d,sh.code),'Delivery QR verified',nm,'driver','Receiver '+sh.receiverName));}else this.setState({scanMsg:'✕ That code doesn’t match this shipment’s receiver.',scanOk:false});}
+    if(sh.status==='Out for delivery'){if(t===T.podPayload(sh)||t===sh.podToken||(sh.pin4&&t===sh.pin4)){this.stopCam();this.setState({podOk:true,scanning:false,scanMsg:''});T.update(d=>T.note(d,T.ship(d,sh.code),'Delivery QR verified',nm,'driver','Receiver '+sh.receiverName));}else this.setState({scanMsg:'✕ That code doesn’t match this shipment’s receiver.',scanOk:false});}
     else{if(t===T.wbPayload(sh)||t.toUpperCase()===sh.code){this.stopCam();this.setState({scanning:false,scanMsg:''});T.update(d=>{const x=T.ship(d,sh.code);x.collectedAt=Date.now();T.step(d,x,'In transit',nm,'driver','Waybill QR scanned · custody taken');T.sms(d,x.senderPhone,'TMO: '+nm+' collected '+x.code+'. On the way to '+T.dest(x.dest).s+'.');T.sms(d,x.receiverPhone,'TMO: Your package '+x.code+' from '+x.senderName+' is on the way. Get your delivery QR: tmo.ng/t/'+x.code);});}
       else this.setState({scanMsg:'✕ Not this shipment’s waybill.',scanOk:false});}}
   sample(label){const c=document.createElement('canvas');c.width=320;c.height=200;const x=c.getContext('2d');x.fillStyle='#8FA89A';x.fillRect(0,0,320,200);x.fillStyle='#C9A26B';x.fillRect(90,50,140,100);x.fillStyle='#fff';x.font='bold 15px sans-serif';x.fillText(label+' · '+TMO.time(Date.now()),14,186);return c.toDataURL('image/jpeg',.7);}
@@ -249,7 +249,7 @@ class Component extends DCLogic {
     if(!T||!s.ready)return {is:{},pagePad:'40px 24px',showAside:true,clock:''};
     const db=T.db,me=this.me(),sc=s.screen,nm=me?me.name:'';
     const go=Object.fromEntries(SCR.map(k=>[k,()=>this.go(k,k==='signin'?{pinMode:'signin',pin:''}:{})]));
-    const VEH=[['Van','400 kg'],['Car','120 kg'],['Motorbike','25 kg']];
+    const VEH=[['Bus','400 kg'],['Car','120 kg'],['Motorbike','25 kg'],['Bicycle','5 kg']];
     const otpDone=()=>{let id;T.update(d=>{let u=T.userByPhone(d,s.phone,'driver');if(!u){u={id:T.uid('u'),role:'driver',name:s.name.trim(),phone:T.norm(s.phone),vehicle:VEH[s.veh][0],plate:s.plate.trim().toUpperCase(),status:'draft',onDuty:false,createdAt:Date.now()};d.users.push(u);}id=u.id;});T.setSession('driver',id);this.go('docs');};
     const otpPress=k=>()=>{if(k==='⌫')return this.setState({otp:s.otp.slice(0,-1)});if(!k)return;const o=(s.otp+k).slice(0,6);this.setState({otp:o});if(o.length===6){if(o!==T.CODE)return setTimeout(()=>this.setState({otp:''}),300);setTimeout(otpDone,300);}};
     const finishPin=p=>{
@@ -261,8 +261,8 @@ class Component extends DCLogic {
     const PU={signin:{title:'Welcome back',sub:'0801 234 5678 · PIN 1234',askPhone:true},create:{title:'Set your PIN',sub:'Enter 1234 — one PIN for everyone',askPhone:false},confirm:{title:'Confirm PIN',sub:'Enter it once more',askPhone:false}}[s.pinMode];
     const allV=s.vc.every(Boolean)&&s.scale;
     // jobs
-    const offers=me&&me.onDuty?db.shipments.filter(x=>x.channel==='online'&&!x.driverId&&['Created','Paid'].includes(x.status)):[];
-    const myJobs=me?db.shipments.filter(x=>x.driverId===me.id&&!['Cancelled'].includes(x.status)):[];
+    const offers=me?db.shipments.filter(x=>x.driverId===me.id&&!x.acceptedAt&&!['Cancelled','Closed','Delivered'].includes(x.status)):[];
+    const myJobs=me?db.shipments.filter(x=>x.driverId===me.id&&x.acceptedAt&&!['Cancelled'].includes(x.status)):[];
     const openJobs=myJobs.filter(x=>!['Delivered','Closed'].includes(x.status));
     const doneJobs=myJobs.filter(x=>['Delivered','Closed'].includes(x.status));
     const sh=T.ship(db,s.cur);let j={},v={},cta=null,cta2=null,scanUi={};
@@ -276,7 +276,7 @@ class Component extends DCLogic {
         address:atDest?T.dest(sh.dest).n:(sh.pickup||sh.park),pkg:(sh.kg?sh.kg+' kg · ':'')+sh.category+' · '+sh.desc,estBand:online?T.BANDS[sh.estBand||0].l:'',kg:sh.kg,dueF:T.fmt(T.due(sh)),
         doneT:'Delivered to '+sh.receiverName.split(' ')[0],doneS:'Proof of delivery uploaded at '+T.time(sh.deliveredAt||Date.now())+'. Sender and receiver notified.'};
       v={weigh:phase==='weigh',payWait:phase==='payWait',scan:phase==='collect'||phase==='scanPod',podPhoto:phase==='pod',done:phase==='done'};
-      scanUi={k:phase==='scanPod'?'APPROVE DELIVERY':'TAKE CUSTODY',help:phase==='scanPod'?'Scan the QR on the receiver’s phone (tracking page or TMO Rider). Or type their 6-digit code.':online?'Scan the waybill QR on the sender’s TMO Rider app.':'Scan the waybill label at '+sh.park+'.',ph:phase==='scanPod'?'6-digit code':'Waybill no.',h:s.scanning?'220px':'0px',camBtn:s.scanning?'Stop camera':'Use camera',msg:s.scanMsg,mc:'#F9D44B'};
+      scanUi={k:phase==='scanPod'?'APPROVE DELIVERY':'TAKE CUSTODY',help:phase==='scanPod'?'Scan the QR on the receiver’s phone. Can’t scan? Type the 4-digit delivery code they see under it.':online?'Scan the waybill QR on the sender’s TMO Rider app.':'Scan the waybill label at '+sh.park+'.',ph:phase==='scanPod'?'4-digit code':'Waybill no.',h:s.scanning?'220px':'0px',camBtn:s.scanning?'Stop camera':'Use camera',msg:s.scanMsg,mc:'#F9D44B'};
       if(phase==='toPickup')cta={l:'I’ve arrived at pickup',go:()=>T.update(d=>{const x=T.ship(d,sh.code);x.arrivedAt=Date.now();T.note(d,x,'Driver arrived at pickup',nm,'driver',x.pickup);T.sms(d,x.senderPhone,'TMO: '+nm+' has arrived at '+x.pickup+' for '+x.code+'.');})};
       if(phase==='weigh')cta={l:'Confirm final weight',go:()=>{if(!kgNum||!s.photo)return this.setState({err:'Weigh the package and take a photo first.'});
         T.update(d=>{const x=T.ship(d,sh.code);x.kg=kgNum;x.photo=s.photo;x.finalPrice=T.price(d,{kg:kgNum,dest:x.dest,value:x.declaredValue}).total;T.note(d,x,'Weighed & verified',nm,'driver',kgNum+' kg · final '+T.fmt(x.finalPrice));
@@ -295,7 +295,7 @@ class Component extends DCLogic {
       toast:!!s.toast,toastText:s.toast?s.toast.text:'',toastTap:()=>{if(s.toast&&s.toast.kind==='otp'&&sc==='otp'){this.setState({otp:(s.toast.text.match(/\d{6}/)||['000000'])[0],toast:null});setTimeout(otpDone,300);}else this.setState({toast:null});},
       a:{name:s.name,phone:s.phone,plate:s.plate},on:{name:e=>this.setState({name:e.target.value}),phone:e=>this.setState({phone:e.target.value,err:''}),plate:e=>this.setState({plate:e.target.value})},
       vehicles:VEH.map((x,i)=>({l:x[0],s:'Up to '+x[1],bd:i===s.veh?'#075A36':'#E2E7E1',bg:i===s.veh?'#E6F6EC':'#fff',pick:()=>this.setState({veh:i})})),
-      submitApply:()=>{if(!s.name.trim())return this.setState({err:'Enter your name'});if(T.norm(s.phone).length!==11)return this.setState({err:'Enter an 11-digit phone'});if(!s.plate.trim())return this.setState({err:'Enter your plate number'});const c=T.sendOtp(s.phone,'Driver');this.go('otp',{otp:'',sent:c});},
+      submitApply:()=>{if(!s.name.trim())return this.setState({err:'Enter your name'});if(T.norm(s.phone).length!==11)return this.setState({err:'Enter an 11-digit phone'});if(!s.plate.trim()&&VEH[s.veh][0]!=='Bicycle')return this.setState({err:'Enter your plate number'});const c=T.sendOtp(s.phone,'Driver');this.go('otp',{otp:'',sent:c});},
       phoneShown:T.fmtPhone(s.phone),otpBoxes:[0,1,2,3,4,5].map(i=>({d:s.otp[i]||'',bd:i===s.otp.length?'#075A36':s.otp[i]?'#3DBE72':'#E2E7E1',bg:s.otp[i]?'#E6F6EC':'#fff'})),
       otpKeys:['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>({l:k,press:otpPress(k),bg:k?'#fff':'transparent'})),autofill:()=>{this.setState({otp:s.sent||'000000'});setTimeout(otpDone,300);},
       docs:['Driver’s licence','Vehicle registration','Vehicle insurance','Profile photo'].map((l,i)=>({l,s:s.docs[i]?'Provided ✓':'Tap to upload',icon:s.docs[i]?'✓':'+',ib:s.docs[i]?'#075A36':'#F4F6F3',if:s.docs[i]?'#fff':'#075A36',bd:s.docs[i]?'#3DBE72':'#E2E7E1',bg:s.docs[i]?'#E6F6EC':'#fff',up:()=>{const a=s.docs.slice();a[i]=true;this.setState({docs:a});}})),
@@ -309,7 +309,9 @@ class Component extends DCLogic {
       scale:s.scale?{t:'Connected · calibrated',c:'#075A36',l:'Paired',bg:'#075A36',fg:'#fff'}:{t:'Not connected',c:'#8A968D',l:'Pair',bg:'#fff',fg:'#075A36'},pairScale:()=>this.setState({scale:true}),
       vchecks:['Tyres, lights and brakes OK','Cargo area clean and lockable','Seals and labels on board','Fuel above ¼ tank'].map((l,i)=>({l,bg:s.vc[i]?'#075A36':'#fff',tick:s.vc[i]?'✓':'',toggle:()=>{const a=s.vc.slice();a[i]=!a[i];this.setState({vc:a});}})),
       dutyCta:{bg:allV?'#075A36':'#E2E7E1',fg:allV?'#fff':'#8A968D'},goOnDuty:()=>{if(!allV)return;T.update(d=>{const u=T.user(d,me.id);u.onDuty=true;T.log(d,u.name,'driver','went on duty · '+u.plate);});this.go('list');},
-      offers:offers.map(x=>({code:x.code,route:x.pickup+' → '+T.dest(x.dest).s,meta:'Est. '+T.BANDS[x.estBand||0].l+' · '+x.category+(x.paidAmount?' · prepaid':''),accept:()=>{T.update(d=>{const y=T.ship(d,x.code);if(y.driverId)return;y.driverId=me.id;T.step(d,y,'Assigned',nm,'driver','Accepted online pickup · '+me.plate);T.sms(d,y.senderPhone,'TMO: '+nm+' ('+me.plate+') accepted your pickup '+y.code+' and is on the way.');});this.openJob(x.code);}})),
+      offers:offers.map(x=>({k:x.channel==='online'?'NEW PICKUP · ASSIGNED BY OFFICER':'NEW PARK JOB · ASSIGNED BY OFFICER',code:x.code,route:(x.pickup||x.park)+' → '+T.dest(x.dest).s,meta:(x.kg?x.kg+' kg':'Est. '+T.BANDS[x.estBand||0].l)+' · '+x.category+(x.channel==='online'?' · '+x.senderName:''),
+        accept:()=>{T.update(d=>{const y=T.ship(d,x.code);if(y.driverId!==me.id)return;y.acceptedAt=Date.now();T.note(d,y,'Driver accepted',nm,'driver',(me.vehicle||'')+' '+(me.plate||''));if(y.channel==='online')T.sms(d,y.senderPhone,'TMO: '+nm+' ('+(me.vehicle||'')+' '+(me.plate||'')+') accepted your pickup '+y.code+' and is on the way.');});this.openJob(x.code);},
+        decline:()=>T.update(d=>{const y=T.ship(d,x.code);if(y.driverId!==me.id)return;y.driverId=null;y.status=y.prevStatus||(y.channel==='online'?'Created':'Accepted');T.note(d,y,'Driver declined',nm,'driver','Back to officer to reassign');})})),
       jobs:openJobs.concat(doneJobs).map(jobRow),noJobs:myJobs.length===0,
       toList:()=>this.go('list'),j,v,scanUi,cta,cta2,vref:this.vref,
       kgIn:s.kg,onKg:e=>this.setState({kg:e.target.value.replace(/[^\d.]/g,'')}),readScale:()=>this.setState({kg:(Math.random()*12+0.8).toFixed(1)}),
